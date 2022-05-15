@@ -1,10 +1,5 @@
-# Go ThreadLocal
+package main
 
-Go version of ThreadLocal is like [Java ThreadLocal](https://docs.oracle.com/javase/8/docs/api/java/lang/ThreadLocal.html)
-
-## Usage
-
-```go
 import (
 	"fmt"
 	"sync"
@@ -29,8 +24,3 @@ func main() {
 	wg.Wait()
 	fmt.Printf("id: %d, tid: %d, val: %v\n", n, threadlocal.ThreadId(), tl1.Get())
 }
-```
-
-You can run the following line of code to test:
-
-> go run example/main.go
