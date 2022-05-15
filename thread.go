@@ -1,5 +1,5 @@
 package threadlocal
 
-func ThreadId() int
+func ThreadId() uint32
 
 func Gid() int

@@ -5,7 +5,7 @@ const (
 	INITIALIZE_THREADLOCALSTORE_SIZE = 128
 )
 
-type threadLocalStore map[int]*ThreadlocalMap
+type threadLocalStore map[uint32]*ThreadlocalMap
 
 var (
 	store    = make(threadLocalStore, INITIALIZE_THREADLOCALSTORE_SIZE)
@@ -117,7 +117,7 @@ func NewEntity(tl *Threadlocal, val interface{}) *Entity {
 }
 
 func CurrentThreadLocalMap() *ThreadlocalMap {
-	var tid int
+	var tid uint32
 	tid = ThreadId()
 	lock(&storeMux)
 	if store[tid] == nil {
