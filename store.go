@@ -33,7 +33,7 @@ func (tlm *ThreadlocalMap) Size() int {
 
 func (tlm *ThreadlocalMap) Set(key *Threadlocal, val interface{}) {
 	i := key.HashCode & (tlm.capacity - 1)
-	for e := tlm.entities[i]; e != nil; i = tlm.nextIndex(i, tlm.capacity) {
+	for e := tlm.entities[i]; e != nil && e != expungeEntity; i = tlm.nextIndex(i, tlm.capacity) {
 		if e.key == key {
 			e.val = val
 			return
