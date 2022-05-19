@@ -24,13 +24,22 @@ func New() *Threadlocal {
 }
 
 func (tl *Threadlocal) Set(data interface{}) {
-	CurrentThreadLocalMap().Set(tl, data)
+	if tl == nil {
+		panic("you should not directly set the threadlocal variable to nil, but use remove()")
+	}
+	currentThreadLocalMap().Set(tl, data)
 }
 
 func (tl *Threadlocal) Get() interface{} {
-	return CurrentThreadLocalMap().Get(tl)
+	if tl == nil {
+		panic("you should not directly set the threadlocal variable to nil, but use remove()")
+	}
+	return currentThreadLocalMap().Get(tl)
 }
 
 func (tl *Threadlocal) Remove() {
-	CurrentThreadLocalMap().Remove(tl)
+	if tl == nil {
+		panic("you should not directly set the threadlocal variable to nil, but use remove()")
+	}
+	currentThreadLocalMap().Remove(tl)
 }

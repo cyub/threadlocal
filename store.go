@@ -5,12 +5,13 @@ const (
 	INITIALIZE_THREADLOCALSTORE_SIZE = 128
 )
 
-type threadLocalStore map[uint32]*ThreadlocalMap
-
 var (
-	store    = make(threadLocalStore, INITIALIZE_THREADLOCALSTORE_SIZE)
-	storeMux mutex
+	store         = make(threadLocalStore, INITIALIZE_THREADLOCALSTORE_SIZE)
+	storeMux      mutex
+	expungeEntity = NewEntity(nil, nil)
 )
+
+type threadLocalStore map[uint32]*ThreadlocalMap
 
 func NewThreadlocalMap(capacity int) *ThreadlocalMap {
 	return &ThreadlocalMap{
@@ -45,10 +46,9 @@ func (tlm *ThreadlocalMap) Set(key *Threadlocal, val interface{}) {
 
 func (tlm *ThreadlocalMap) Get(key *Threadlocal) interface{} {
 	i := key.HashCode & (tlm.capacity - 1)
-	for e := tlm.entities[i]; e != nil; i = tlm.nextIndex(i, tlm.capacity) {
+	for e := tlm.entities[i]; e != nil && e != expungeEntity; i = tlm.nextIndex(i, tlm.capacity) {
 		if e.key == key {
 			return e.val
-			break
 		}
 	}
 	return nil
@@ -56,24 +56,12 @@ func (tlm *ThreadlocalMap) Get(key *Threadlocal) interface{} {
 
 func (tlm *ThreadlocalMap) Remove(key *Threadlocal) {
 	i := key.HashCode & (tlm.capacity - 1)
-	for e := tlm.entities[i]; e != nil; i = tlm.nextIndex(i, tlm.capacity) {
+	for e := tlm.entities[i]; e != nil && e != expungeEntity; i = tlm.nextIndex(i, tlm.capacity) {
 		if e.key == key {
-			tlm.entities[i] = nil
-			tlm.moveNextSameSlotEntity((key.HashCode & (tlm.capacity - 1)), i)
-		}
-	}
-}
-
-func (tlm *ThreadlocalMap) moveNextSameSlotEntity(slot int, idx int) {
-	current := idx
-	i := idx + 1
-	for e := tlm.entities[i]; e != nil; i = tlm.nextIndex(i, tlm.capacity) {
-		if e.key.HashCode&(tlm.capacity-1) != slot {
+			tlm.entities[i] = expungeEntity // mark deleted
+			tlm.size++
 			break
 		}
-		tlm.entities[current] = e
-		current = i
-		tlm.entities[current] = nil
 	}
 }
 
@@ -91,7 +79,7 @@ func (tlm *ThreadlocalMap) rehash() {
 	newLen := tlm.capacity << 1
 	newTab := make([]*Entity, newLen, newLen)
 	for _, e := range tlm.entities {
-		if e == nil {
+		if e == nil || e == expungeEntity {
 			continue
 		}
 		i := e.key.HashCode & (newLen - 1)
@@ -116,7 +104,7 @@ func NewEntity(tl *Threadlocal, val interface{}) *Entity {
 	}
 }
 
-func CurrentThreadLocalMap() *ThreadlocalMap {
+func currentThreadLocalMap() *ThreadlocalMap {
 	var tid uint32
 	tid = ThreadId()
 	lock(&storeMux)
