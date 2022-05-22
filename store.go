@@ -38,6 +38,7 @@ func (tlm *ThreadlocalMap) Set(key *Threadlocal, val interface{}) {
 			e.val = val
 			return
 		}
+		e = tlm.entities[i]
 	}
 	tlm.entities[i] = NewEntity(key, val)
 	tlm.size++
@@ -50,6 +51,7 @@ func (tlm *ThreadlocalMap) Get(key *Threadlocal) interface{} {
 		if e.key == key {
 			return e.val
 		}
+		e = tlm.entities[i]
 	}
 	return nil
 }
@@ -59,9 +61,10 @@ func (tlm *ThreadlocalMap) Remove(key *Threadlocal) {
 	for e := tlm.entities[i]; e != nil && e != expungeEntity; i = tlm.nextIndex(i, tlm.capacity) {
 		if e.key == key {
 			tlm.entities[i] = expungeEntity // mark deleted
-			tlm.size++
+			tlm.size--
 			break
 		}
+		e = tlm.entities[i]
 	}
 }
 
@@ -105,12 +108,9 @@ func NewEntity(tl *Threadlocal, val interface{}) *Entity {
 }
 
 func currentThreadLocalMap() *ThreadlocalMap {
-	var tid uint32
-	tid = ThreadId()
-	lock(&storeMux)
+	var tid = ThreadId()
 	if store[tid] == nil {
 		store[tid] = NewThreadlocalMap(INITIALIZE_THREADLOCALMAP_SIZE)
 	}
-	unlock(&storeMux)
 	return store[tid]
 }

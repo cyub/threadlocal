@@ -1,6 +1,7 @@
 package threadlocal
 
 import (
+	"runtime"
 	"sync/atomic"
 )
 
@@ -25,21 +26,30 @@ func New() *Threadlocal {
 
 func (tl *Threadlocal) Set(data interface{}) {
 	if tl == nil {
-		panic("you should not directly set the threadlocal variable to nil, but use remove()")
+		panic("you should not directly set the threadlocal variable to nil")
 	}
+
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
 	currentThreadLocalMap().Set(tl, data)
 }
 
 func (tl *Threadlocal) Get() interface{} {
 	if tl == nil {
-		panic("you should not directly set the threadlocal variable to nil, but use remove()")
+		panic("you should not directly set the threadlocal variable to nil")
 	}
+
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
 	return currentThreadLocalMap().Get(tl)
 }
 
 func (tl *Threadlocal) Remove() {
 	if tl == nil {
-		panic("you should not directly set the threadlocal variable to nil, but use remove()")
+		panic("you should not directly set the threadlocal variable to nil")
 	}
+
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
 	currentThreadLocalMap().Remove(tl)
 }
