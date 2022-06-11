@@ -7,7 +7,6 @@ const (
 
 var (
 	store         = make(threadLocalStore, INITIALIZE_THREADLOCALSTORE_SIZE)
-	storeMux      mutex
 	expungeEntity = NewEntity(nil, nil)
 )
 
@@ -17,7 +16,7 @@ func NewThreadlocalMap(capacity int) *ThreadlocalMap {
 	return &ThreadlocalMap{
 		size:     0,
 		capacity: capacity,
-		entities: make([]*Entity, capacity, capacity),
+		entities: make([]*Entity, capacity),
 	}
 }
 
@@ -80,7 +79,7 @@ func (tlm *ThreadlocalMap) rehash() {
 		return
 	}
 	newLen := tlm.capacity << 1
-	newTab := make([]*Entity, newLen, newLen)
+	newTab := make([]*Entity, newLen)
 	for _, e := range tlm.entities {
 		if e == nil || e == expungeEntity {
 			continue
